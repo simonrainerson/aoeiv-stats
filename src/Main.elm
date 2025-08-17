@@ -231,22 +231,52 @@ subscriptions _ =
 -- VIEW
 
 
+header : String -> List (Html.Attribute Msg) -> Html Msg
+header t styles =
+    div
+        ([ style "font-family" "'Brush Script MT', cursive"
+         , style "font-size" "2em"
+         , style "font-weight" "bold"
+         ]
+            ++ styles
+        )
+        [ text t ]
+
+
+summaryText : Int -> Int -> Float -> String
+summaryText numWins totalGames winRate =
+    let
+        percentage =
+            (winRate |> String.fromFloat |> String.left 6) ++ "%"
+
+        count =
+            (numWins |> String.fromInt) ++ " wins out of " ++ (totalGames |> String.fromInt) ++ " games."
+    in
+    percentage ++ " (" ++ count ++ ")"
+
+
 statBox : String -> Int -> Int -> Html Msg
 statBox name numWins totalGames =
     let
         winRate =
-            100 * (numWins |> toFloat) / (totalGames |> toFloat)
+            if totalGames == 0 then
+                0
+
+            else
+                100 * (numWins |> toFloat) / (totalGames |> toFloat)
     in
-    div [ style "background-color" "#FAEBD7", style "margin" "1em", style "padding" "1em" ]
+    div [ style "background-color" "#FAEBD7", style "margin" "1em", style "padding" "1em", style "height" "2.5em" ]
         [ div
             []
-            [ text (name ++ ": ")
-            , text ((numWins |> String.fromInt) ++ " wins out of " ++ (totalGames |> String.fromInt) ++ " games.")
+            [ header (name ++ ":") [ style "display" "inline-block" ]
+            , div
+                [ style "font-size" "1.5em", style "float" "right" ]
+                [ text (summaryText numWins totalGames winRate) ]
             ]
-        , div [ style "background-color" "darkred" ]
+        , div [ style "background-color" "darkgreen" ]
             [ div
-                [ style "background-color" "green", style "width" (String.append (winRate |> String.fromFloat) "%") ]
-                [ String.append (winRate |> String.fromFloat) "%" |> text ]
+                [ style "background-color" "#F2EAD5", style "width" (String.append ((100 - winRate) |> String.fromFloat) "%"), style "height" "1em" ]
+                []
             ]
         ]
 
@@ -284,9 +314,9 @@ civFilterBox title filters =
         , style "padding" "0.2em"
         , style "margin" "0.2em"
         , style "background-color" color
-        , style "width" "15em"
+        , style "width" "16em"
         ]
-        [ text title
+        [ header title []
         , box AbbasidDynasty
         , box Ayyubids
         , box Byzantines
@@ -325,13 +355,24 @@ view model =
                 totalGames =
                     List.filter (applyFilters filters) games
             in
-            div []
-                (statBox
-                    "Total"
-                    (totalGames |> wins)
-                    (totalGames |> List.length)
-                    :: (gamesPerMap |> Dict.toList |> List.map (\( k, v ) -> statBox k (v |> wins) (v |> List.length)))
-                    ++ [ civFilterBox "Our Team (All of)" filters.heroCivs
-                       , civFilterBox "Enemy Team (Any of)" filters.enemyCivs
-                       ]
-                )
+            --- style "font-family" "'Times New Roman', seif"
+            div
+                [ style "background-color" "#6d83a6"
+                , style "min-height" "100vh"
+                , style "font-family" "'Times New Roman', serif"
+                , style "font-size" "1.1em"
+                ]
+                [ div
+                    [ style "display" "inline-block", style "width" "75%", style "background-color" "#FAEBD7", style "margin-left" "3em", style "height" "100vh" ]
+                    (statBox
+                        "Total"
+                        (totalGames |> wins)
+                        (totalGames |> List.length)
+                        :: (gamesPerMap |> Dict.toList |> List.map (\( k, v ) -> statBox k (v |> wins) (v |> List.length)))
+                    )
+                , div
+                    [ style "display" "inline-block", style "position" "absolute", style "right" "1em", style "top" "1em" ]
+                    [ civFilterBox "Our Team (All of)" filters.heroCivs
+                    , civFilterBox "Enemy Team (Any of)" filters.enemyCivs
+                    ]
+                ]
