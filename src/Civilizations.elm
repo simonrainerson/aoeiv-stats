@@ -10,8 +10,10 @@ type Civilization
     | English
     | French
     | HolyRomanEmpire
+    | HouseOfLancaster
     | Japanese
     | JeanneDarc
+    | KnightsTemplar
     | Malians
     | Mongols
     | OrderOfTheDragon
@@ -47,11 +49,17 @@ civilizationFromString civ =
         "holy_roman_empire" ->
             Just HolyRomanEmpire
 
+        "house_of_lancaster" ->
+            Just HouseOfLancaster
+
         "japanese" ->
             Just Japanese
 
         "jeanne_darc" ->
             Just JeanneDarc
+
+        "knights_templar" ->
+            Just KnightsTemplar
 
         "malians" ->
             Just Malians
@@ -102,11 +110,17 @@ civilizationToString civ =
         HolyRomanEmpire ->
             "Holy Roman Empire"
 
+        HouseOfLancaster ->
+            "House of Lancaster"
+
         Japanese ->
             "Japanese"
 
         JeanneDarc ->
             "Jeanne Darc"
+
+        KnightsTemplar ->
+            "Knights Templar"
 
         Malians ->
             "Malians"

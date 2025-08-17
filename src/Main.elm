@@ -292,8 +292,10 @@ civFilterBox title filters =
         , box English
         , box French
         , box HolyRomanEmpire
+        , box HouseOfLancaster
         , box Japanese
         , box JeanneDarc
+        , box KnightsTemplar
         , box Malians
         , box Mongols
         , box OrderOfTheDragon
