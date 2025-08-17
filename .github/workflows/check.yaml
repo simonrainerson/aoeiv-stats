@@ -1,0 +1,18 @@
+name: Build and Check 📋
+
+on:
+  push:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout 🏪
+        uses: actions/checkout@v4
+      - name: Install Nix 🖥
+        uses: cachix/install-nix-action@v31
+      - name: Build 🔨
+        run: nix build

@@ -1,0 +1,39 @@
+name: Deploy to Github Pages
+
+on:
+  push:
+    branches: [$default-branch]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout 🏪
+        uses: actions/checkout@v4
+      - name: Install Nix 🖥
+        uses: cachix/install-nix-action@v31
+      - name: Build 🔨
+        run: nix build
+      - name: Setup Pages 📃
+        uses: actions/configure-pages@v5
+      - name: Upload Artifact 🛰
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'result/'
+      - name: Deploy to GitHub Pages 📤
+        id: deployment
+        uses: actions/deploy-pages@v4
