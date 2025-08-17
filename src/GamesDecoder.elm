@@ -1,7 +1,7 @@
-module GamesDecoder exposing (Game, MatchResult(..), Player, Team, fullTeam, gameDecoder, gamesDecoder)
+module GamesDecoder exposing (Game, Games, MatchResult(..), Player, Team, fullTeam, gameDecoder, gamesDecoder)
 
 import Civilizations exposing (..)
-import Json.Decode exposing (Decoder, andThen, at, fail, field, index, int, list, map6, map7, nullable, string, succeed)
+import Json.Decode exposing (Decoder, andThen, at, fail, field, index, int, list, map5, map6, map7, nullable, string, succeed)
 
 
 
@@ -50,6 +50,15 @@ type alias ParsedGame =
 
 
 --- Public Types
+
+
+type alias Games =
+    { offset : Int
+    , page : Int
+    , count : Int
+    , total : Int
+    , games : List Game
+    }
 
 
 type alias Player =
@@ -196,6 +205,11 @@ fullTeam game =
     game.ourTeam |> List.map (\p -> p.id) |> List.all (\id -> List.member id [ simon, daniel, linus ])
 
 
-gamesDecoder : Decoder (List Game)
+gamesDecoder : Decoder Games
 gamesDecoder =
-    field "games" (list gameDecoder)
+    map5 Games
+        (field "offset" int)
+        (field "page" int)
+        (field "count" int)
+        (field "total_count" int)
+        (field "games" (list gameDecoder))

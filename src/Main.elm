@@ -20,7 +20,7 @@ type alias GameDict =
 
 
 type Msg
-    = GotGames (Result Http.Error (List Game))
+    = GotGames (Result Http.Error Games)
     | Toggle Side Civilization
 
 
@@ -87,12 +87,7 @@ type Side
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Loading
-    , Cmd.batch
-        [ getGames 1
-        , getGames 2
-        , getGames 3
-        , getGames 4
-        ]
+    , getGames 1
     )
 
 
@@ -171,6 +166,11 @@ toggleCiv civ filter =
     { filter | civs = toggleListMember civ filter.civs }
 
 
+needMore : Games -> Bool
+needMore response =
+    response.offset + response.count < response.total
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
@@ -187,10 +187,13 @@ update msg model =
     case Debug.log "update" msg of
         GotGames result ->
             case result of
-                Ok games ->
-                    ( Success ( old_games ++ (games |> validGames), filters )
-                    , Cmd.none
-                      -- Cmd.none -> Get next page if expected
+                Ok response ->
+                    ( Success ( old_games ++ (response.games |> validGames), filters )
+                    , if needMore response then
+                        getGames (response.page + 1)
+
+                      else
+                        Cmd.none
                     )
 
                 Err _ ->
