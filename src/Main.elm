@@ -15,6 +15,25 @@ import Http
 -- STUFF
 
 
+seasonStart : Int -> String
+seasonStart number =
+    case number of
+        11 ->
+            "2025-06-26"
+
+        10 ->
+            "2025-04-03"
+
+        9 ->
+            "2024-10-01"
+
+        8 ->
+            "2024-07-11"
+
+        _ ->
+            "2024-03-12"
+
+
 type alias GameDict =
     Dict.Dict String (List Game)
 
@@ -37,7 +56,7 @@ losses games =
 getGames : Int -> Cmd Msg
 getGames page =
     Http.get
-        { url = "https://aoe4world.com/api/v0/players/76561197985789866/games?leaderboard=rm_3v3&since=2024-10-01&page=" ++ String.fromInt page
+        { url = "https://aoe4world.com/api/v0/players/76561197985789866/games?leaderboard=rm_3v3&since=" ++ seasonStart 11 ++ "&page=" ++ String.fromInt page
         , expect = Http.expectJson GotGames gamesDecoder
         }
 
@@ -101,7 +120,7 @@ gameFilter game =
         /= Unknown
         && fullTeam game
         && game.season
-        == 9
+        == 11
 
 
 validGames : List Game -> List Game
