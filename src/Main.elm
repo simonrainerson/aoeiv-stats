@@ -2,7 +2,6 @@ module Main exposing (..)
 
 import Browser
 import Civilizations exposing (Civilization(..), civilizationToString)
-import Debug
 import Dict
 import GamesDecoder exposing (..)
 import Html exposing (Html, div, input, option, select, text)
@@ -23,7 +22,7 @@ seasonFromString s =
             Season v
 
         Nothing ->
-            Debug.log "Failed to parse season, setting to 11" Season 11
+            Season 11
 
 
 seasonStart : Season -> String
@@ -105,7 +104,7 @@ type alias AllFilters =
 
 
 type Model
-    = Failure
+    = Failure Http.Error
     | Loading Season
     | Success ( List Game, AllFilters, Season )
 
@@ -216,8 +215,7 @@ update msg model =
                     , Season 11
                     )
     in
-    --case Debug.log "update" msg of
-    case Debug.log "update" msg of
+    case msg of
         GotGames season_ result ->
             case result of
                 Ok response ->
@@ -229,8 +227,8 @@ update msg model =
                         Cmd.none
                     )
 
-                Err _ ->
-                    Debug.log "Error" ( Failure, Cmd.none )
+                Err error ->
+                    ( Failure error, Cmd.none )
 
         Toggle side civ ->
             case model of
@@ -397,8 +395,26 @@ seasonDropdown =
 view : Model -> Html Msg
 view model =
     case model of
-        Failure ->
-            text "Unable to load games from aoe4world."
+        Failure error ->
+            let
+                errorstr =
+                    case error of
+                        Http.BadUrl url ->
+                            "Bad url: " ++ url
+
+                        Http.Timeout ->
+                            "Request timeout"
+
+                        Http.NetworkError ->
+                            "Network error"
+
+                        Http.BadStatus status ->
+                            "Got status: " ++ String.fromInt status
+
+                        Http.BadBody body ->
+                            "Got bad html body: " ++ body
+            in
+            "Unable to load games from aoe4world: " ++ errorstr |> text
 
         Loading (Season season) ->
             text ("Loading Season " ++ String.fromInt season ++ "...")
@@ -411,7 +427,6 @@ view model =
                 totalGames =
                     List.filter (applyFilters filters) games
             in
-            --- style "font-family" "'Times New Roman', seif"
             div
                 [ bgDark
                 , style "min-height" "100vh"

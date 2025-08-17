@@ -2,7 +2,7 @@ module Decoding exposing (suite)
 
 import Civilizations exposing (Civilization(..))
 import Expect exposing (equal, fail)
-import GamesDecoder exposing (Game, MatchResult(..), Player, gameDecoder, gamesDecoder)
+import GamesDecoder exposing (Game, Games, MatchResult(..), Player, gameDecoder, gamesDecoder)
 import Json.Decode exposing (decodeString, errorToString)
 import Test exposing (Test, describe, test)
 
@@ -495,7 +495,7 @@ suite =
             \_ ->
                 case decodeString gamesDecoder fullRequest of
                     Ok res ->
-                        res |> equal [ game1, game2 ]
+                        res |> equal (Games 50 2 50 141 [ game1, game2 ])
 
                     Err error ->
                         error |> errorToString |> fail

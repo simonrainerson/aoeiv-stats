@@ -17,7 +17,6 @@
           nativeBuildInputs = with pkgs.elmPackages; [
             elm
             elm-format
-            elm-optimize-level-2
             elm-test
           ];
 
@@ -28,7 +27,7 @@
           '';
 
           buildPhase = ''
-            elm make src/Main.elm
+            elm make --optimize src/Main.elm
           '';
 
           checkPhase = ''
