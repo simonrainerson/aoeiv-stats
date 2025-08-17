@@ -12,10 +12,6 @@ import Http
 import Json.Encode
 
 
-
--- STUFF
-
-
 type Season
     = Season Int
 
@@ -220,6 +216,7 @@ update msg model =
                     , Season 11
                     )
     in
+    --case Debug.log "update" msg of
     case Debug.log "update" msg of
         GotGames season_ result ->
             case result of
@@ -273,6 +270,26 @@ subscriptions _ =
 -- VIEW
 
 
+bgDark : Html.Attribute msg
+bgDark =
+    style "background-color" "#1B1B1E"
+
+
+bgDarkBlue : Html.Attribute msg
+bgDarkBlue =
+    style "background-color" "#0D47A1"
+
+
+bgLight : Html.Attribute msg
+bgLight =
+    style "background-color" "#232327"
+
+
+textColor : Html.Attribute msg
+textColor =
+    style "color" "#E9E7E1"
+
+
 header : String -> List (Html.Attribute Msg) -> Html Msg
 header t styles =
     div
@@ -307,7 +324,7 @@ statBox name numWins totalGames =
             else
                 100 * (numWins |> toFloat) / (totalGames |> toFloat)
     in
-    div [ style "background-color" "#FAEBD7", style "margin" "1em", style "padding" "1em", style "height" "2.5em" ]
+    div [ bgLight, style "margin" "1em", style "padding" "1em", style "height" "2.5em" ]
         [ div
             []
             [ header (name ++ ":") [ style "display" "inline-block" ]
@@ -315,9 +332,9 @@ statBox name numWins totalGames =
                 [ style "font-size" "1.5em", style "float" "right" ]
                 [ text (summaryText numWins totalGames winRate) ]
             ]
-        , div [ style "background-color" "darkgreen" ]
+        , div [ bgDarkBlue ]
             [ div
-                [ style "background-color" "#F2EAD5", style "width" (String.append ((100 - winRate) |> String.fromFloat) "%"), style "height" "1em" ]
+                [ bgLight, style "width" (String.append ((100 - winRate) |> String.fromFloat) "%"), style "height" "1em" ]
                 []
             ]
         ]
@@ -340,22 +357,14 @@ civbox civ side on =
 civFilterBox : String -> CivilizationFilter -> Html Msg
 civFilterBox title filters =
     let
-        color =
-            if filters.side == Hero then
-                "lightGreen"
-
-            else
-                "pink"
-
         box =
             \c -> civbox c filters.side (List.member c filters.civs)
     in
     div
-        [ style "border" "0.2em solid black"
-        , style "border-radius" "0.5em"
+        [ style "border-radius" "0.5em"
         , style "padding" "0.2em"
         , style "margin" "0.2em"
-        , style "background-color" color
+        , bgLight
         , style "width" "16em"
         ]
         [ header title []
@@ -404,13 +413,19 @@ view model =
             in
             --- style "font-family" "'Times New Roman', seif"
             div
-                [ style "background-color" "#6d83a6"
+                [ bgDark
                 , style "min-height" "100vh"
                 , style "font-family" "'Times New Roman', serif"
                 , style "font-size" "1.1em"
+                , textColor
                 ]
                 [ div
-                    [ style "display" "inline-block", style "width" "75%", style "background-color" "#FAEBD7", style "margin-left" "3em", style "height" "100vh" ]
+                    [ style "display" "inline-block"
+                    , style "width" "75%"
+                    , bgLight
+                    , style "margin-left" "3em"
+                    , style "height" "100vh"
+                    ]
                     (statBox
                         "Total"
                         (totalGames |> wins)
@@ -418,8 +433,22 @@ view model =
                         :: (gamesPerMap |> Dict.toList |> List.map (\( k, v ) -> statBox k (v |> wins) (v |> List.length)))
                     )
                 , div
-                    [ style "display" "inline-block", style "position" "absolute", style "right" "1em", style "top" "1em" ]
-                    [ div [ style "padding-bottom" "1em" ] [ select [ style "width" "100%", style "background-color" "#FAEBD7", onInput (seasonFromString >> SetSeason), property "value" (String.fromInt season |> Json.Encode.string) ] seasonDropdown ]
+                    [ style "display" "inline-block"
+                    , style "position" "absolute"
+                    , style "right" "1em"
+                    , style "top" "1em"
+                    ]
+                    [ div
+                        [ style "padding-bottom" "1em" ]
+                        [ select
+                            [ style "width" "100%"
+                            , bgLight
+                            , style "color-scheme" "dark"
+                            , onInput (seasonFromString >> SetSeason)
+                            , property "value" (String.fromInt season |> Json.Encode.string)
+                            ]
+                            seasonDropdown
+                        ]
                     , civFilterBox "Our Team (All of)" filters.heroCivs
                     , civFilterBox "Enemy Team (Any of)" filters.enemyCivs
                     ]
