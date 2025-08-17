@@ -5,29 +5,44 @@ import Civilizations exposing (Civilization(..), civilizationToString)
 import Debug
 import Dict
 import GamesDecoder exposing (..)
-import Html exposing (Html, div, input, text)
-import Html.Attributes exposing (checked, style, type_)
-import Html.Events exposing (onClick)
+import Html exposing (Html, div, input, option, select, text)
+import Html.Attributes exposing (attribute, checked, property, style, type_)
+import Html.Events exposing (onClick, onInput)
 import Http
+import Json.Encode
 
 
 
 -- STUFF
 
 
-seasonStart : Int -> String
-seasonStart number =
-    case number of
-        11 ->
+type Season
+    = Season Int
+
+
+seasonFromString : String -> Season
+seasonFromString s =
+    case String.toInt s of
+        Just v ->
+            Season v
+
+        Nothing ->
+            Debug.log "Failed to parse season, setting to 11" Season 11
+
+
+seasonStart : Season -> String
+seasonStart season =
+    case season of
+        Season 11 ->
             "2025-06-26"
 
-        10 ->
+        Season 10 ->
             "2025-04-03"
 
-        9 ->
+        Season 9 ->
             "2024-10-01"
 
-        8 ->
+        Season 8 ->
             "2024-07-11"
 
         _ ->
@@ -39,7 +54,8 @@ type alias GameDict =
 
 
 type Msg
-    = GotGames (Result Http.Error Games)
+    = GotGames Season (Result Http.Error Games)
+    | SetSeason Season
     | Toggle Side Civilization
 
 
@@ -53,11 +69,11 @@ losses games =
     games |> List.map (\game -> game |> .result) |> List.filter (\result -> result == Loss) |> List.length
 
 
-getGames : Int -> Cmd Msg
-getGames page =
+getGames : Int -> Season -> Cmd Msg
+getGames page season =
     Http.get
-        { url = "https://aoe4world.com/api/v0/players/76561197985789866/games?leaderboard=rm_3v3&since=" ++ seasonStart 11 ++ "&page=" ++ String.fromInt page
-        , expect = Http.expectJson GotGames gamesDecoder
+        { url = "https://aoe4world.com/api/v0/players/76561197985789866/games?leaderboard=rm_3v3&since=" ++ seasonStart season ++ "&page=" ++ String.fromInt page
+        , expect = Http.expectJson (GotGames season) gamesDecoder
         }
 
 
@@ -94,8 +110,8 @@ type alias AllFilters =
 
 type Model
     = Failure
-    | Loading
-    | Success ( List Game, AllFilters )
+    | Loading Season
+    | Success ( List Game, AllFilters, Season )
 
 
 type Side
@@ -105,8 +121,8 @@ type Side
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Loading
-    , getGames 1
+    ( Loading (Season 11)
+    , getGames 1 (Season 11)
     )
 
 
@@ -114,18 +130,18 @@ init _ =
 -- UPDATE
 
 
-gameFilter : Game -> Bool
-gameFilter game =
+gameFilter : Season -> Game -> Bool
+gameFilter (Season season) game =
     game.result
         /= Unknown
         && fullTeam game
         && game.season
-        == 11
+        == season
 
 
-validGames : List Game -> List Game
-validGames games =
-    games |> List.filter gameFilter
+validGames : Season -> List Game -> List Game
+validGames season games =
+    games |> List.filter (gameFilter season)
 
 
 extendGames : Game -> GameDict -> GameDict
@@ -193,23 +209,24 @@ needMore response =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        ( old_games, filters ) =
+        ( old_games, filters, season ) =
             case model of
-                Success ( last_games, last_filters ) ->
-                    ( last_games, last_filters )
+                Success ( last_games, last_filters, season_ ) ->
+                    ( last_games, last_filters, season_ )
 
                 _ ->
                     ( []
                     , AllFilters (CivilizationFilter Hero List.all []) (CivilizationFilter Enemy List.any [])
+                    , Season 11
                     )
     in
     case Debug.log "update" msg of
-        GotGames result ->
+        GotGames season_ result ->
             case result of
                 Ok response ->
-                    ( Success ( old_games ++ (response.games |> validGames), filters )
+                    ( Success ( old_games ++ (response.games |> validGames season), filters, season_ )
                     , if needMore response then
-                        getGames (response.page + 1)
+                        getGames (response.page + 1) season_
 
                       else
                         Cmd.none
@@ -220,7 +237,7 @@ update msg model =
 
         Toggle side civ ->
             case model of
-                Success ( games, filters_ ) ->
+                Success ( games, filters_, season_ ) ->
                     ( Success
                         ( games
                         , case side of
@@ -229,12 +246,18 @@ update msg model =
 
                             Enemy ->
                                 { filters_ | enemyCivs = toggleCiv civ filters_.enemyCivs }
+                        , season_
                         )
                     , Cmd.none
                     )
 
                 _ ->
                     ( model, Cmd.none )
+
+        SetSeason season_ ->
+            ( Loading season_
+            , getGames 1 season_
+            )
 
 
 
@@ -357,16 +380,21 @@ civFilterBox title filters =
         ]
 
 
+seasonDropdown : List (Html Msg)
+seasonDropdown =
+    List.range 8 11 |> List.map (\i -> option [ attribute "value" (String.fromInt i) ] [ text ("Season " ++ String.fromInt i) ]) |> List.reverse
+
+
 view : Model -> Html Msg
 view model =
     case model of
         Failure ->
             text "Unable to load games from aoe4world."
 
-        Loading ->
-            text "Loading..."
+        Loading (Season season) ->
+            text ("Loading Season " ++ String.fromInt season ++ "...")
 
-        Success ( games, filters ) ->
+        Success ( games, filters, Season season ) ->
             let
                 gamesPerMap =
                     mapMaps games filters
@@ -391,7 +419,8 @@ view model =
                     )
                 , div
                     [ style "display" "inline-block", style "position" "absolute", style "right" "1em", style "top" "1em" ]
-                    [ civFilterBox "Our Team (All of)" filters.heroCivs
+                    [ div [ style "padding-bottom" "1em" ] [ select [ style "width" "100%", style "background-color" "#FAEBD7", onInput (seasonFromString >> SetSeason), property "value" (String.fromInt season |> Json.Encode.string) ] seasonDropdown ]
+                    , civFilterBox "Our Team (All of)" filters.heroCivs
                     , civFilterBox "Enemy Team (Any of)" filters.enemyCivs
                     ]
                 ]
