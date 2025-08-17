@@ -15,4 +15,4 @@ jobs:
       - name: Install Nix 🖥
         uses: cachix/install-nix-action@v31
       - name: Build 🔨
-        run: nix build
+        run: nix build -L

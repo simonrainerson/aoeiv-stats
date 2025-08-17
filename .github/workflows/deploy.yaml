@@ -27,7 +27,7 @@ jobs:
       - name: Install Nix 🖥
         uses: cachix/install-nix-action@v31
       - name: Build 🔨
-        run: nix build
+        run: nix build -L
       - name: Setup Pages 📃
         uses: actions/configure-pages@v5
       - name: Upload Artifact 🛰

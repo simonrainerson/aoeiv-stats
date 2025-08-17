@@ -1,5 +1,5 @@
 {
-  description = "Keeping track of AOEIV stats";
+  description = "Keeping track of AOEIV stats with friends.";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=24.11";
@@ -22,9 +22,11 @@
 
           src = ./.;
 
-          configurePhase = ''
-            export HOME=$PWD/.home
-          '';
+          configurePhase = pkgs.elmPackages.fetchElmDeps {
+            elmPackages = import ./elm-srcs.nix;
+            elmVersion = "0.19.1";
+            registryDat = ./registry.dat;
+          };
 
           buildPhase = ''
             elm make --optimize src/Main.elm
@@ -55,19 +57,8 @@
             elm-optimize-level-2
             elm-test
             elm-language-server
-            #pkgs.caddy
-            #pkgs.nodejs_20
-            #pkgs.nodePackages.terser
-            #pkgs.shellcheck
+            pkgs.elm2nix
           ];
-
-          # shellHook = ''
-          #   export project="$PWD"
-          #   export build="$project/.build"
-          #   export PATH="$project/bin:$PATH"
-          #
-          #   npm install --loglevel silent
-          # '';
         };
       }
     );
